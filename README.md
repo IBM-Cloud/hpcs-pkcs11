@@ -58,4 +58,4 @@ For maximum security, you can optionally verify the integrity and authenticity o
 
 ## Initializing the Keystores
 
-Prior to using the PKCS #11 library, the keystores must be initialized. To initialize the keystores, the security officer (SO) user needs to perform a `C_InitToken` operation. Once, the keystores have been initialized, normal and anonymous users can proceed with key operations such as `C_GenerateKey` or `C_GenerateKeyPair`.
+Prior to using the PKCS #11 library, the keystores must be initialized. To initialize the keystores, the security officer (SO) user needs to perform a `C_InitToken` operation. Once the keystores have been initialized, normal and anonymous users can proceed with key operations such as `C_GenerateKey` or `C_GenerateKeyPair`.
