@@ -59,3 +59,18 @@ For maximum security, you can optionally verify the integrity and authenticity o
 ## Initializing the Keystores
 
 Prior to using the PKCS #11 library, the keystores must be initialized. To initialize the keystores, the security officer (SO) user needs to perform a `C_InitToken` operation. Once the keystores have been initialized, normal and anonymous users can proceed with key operations such as `C_GenerateKey` or `C_GenerateKeyPair`.
+
+## Getting started
+
+The `samples` directory in this repository contains source code that could be used to test your HPCS instance, the PKCS11 library, and the PKCS11 library's configuration file.  Follow the instructions inside pkcs11-crypto.c to get started.
+
+The sample code performs the following operations:
+
+* Intialize a token
+* Open a session
+* Login as a normal user
+* Create an AES key
+* Create an EC key pair
+* Encrypt data and decrypt data using the AES key
+* Sign and verify data using the EC key pair
+* Logout, close session and finalize
