@@ -22,7 +22,7 @@ There are two files used along with your PKCS #11 application:
 
    - Changes to the configuration file are needed after you download it. Update the *grep11client.yaml* configuration file by following step 3 of the IBM Cloud Hyper Protect Crypto Services documentation topic: [Set up the PKCS #11 configuration file](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-set-up-pkcs-api)
 
-   - **NOTE:** The *grep11client.yaml* configuration file must be moved into the same directory as the PKCS #11 library or in the directory `/etc/ep11client`.
+   - **NOTE:** The *grep11client.yaml* configuration file must be moved into the same directory as the application (e.g., pkcs11-tool) using the PKCS #11 library or in the directory `/etc/ep11client`.
 
 ## Verify the integrity and authenticity of the PKCS #11 library
 

@@ -11,7 +11,7 @@
  * gcc -o pkcs11-attrs pkcs11-attrs.c -ldl
  * 
  * Usage:
- * ./pkcs11-attrs -p <path to pkcs11 library> -s <SO user API key> -u <normal user API key>
+ * ./pkcs11-attrs -p <path to pkcs11 library> -s <SO user API key> -u <normal user API key> -l <label> -m [generate|load]
  * Ensure that the grep11client.yaml PKCS11 configuration file is in the /etc/ep11client directory. You may
  * need to create the /etc/ep11client directory, if it does not exist.
  *
@@ -32,10 +32,10 @@
 #include "sample.h"
 
 typedef enum {
-    ATTR_GRPC_INVALID = 0,
-    ATTR_GRPC_BYTEARRAY = 1,
-    ATTR_GRPC_INTEGER = 2,
-    ATTR_GRPC_BOOL = 3,
+    ATTR_INVALID = 0,
+    ATTR_BYTEARRAY = 1,
+    ATTR_INTEGER = 2,
+    ATTR_BOOL = 3,
 }AttrGRPCType;
 
 typedef struct {
@@ -44,93 +44,93 @@ typedef struct {
 }AttrIDType;
 
 AttrIDType attrToType[] = {
-        {CKA_CLASS,                      ATTR_GRPC_INTEGER},   // CK_OBJECT_CLASS,
-        {CKA_TOKEN,                      ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_PRIVATE,                    ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_LABEL,                      ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_APPLICATION,                ATTR_GRPC_BYTEARRAY}, // CK_RFC2279_STRING,
-        {CKA_VALUE,                      ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_OBJECT_ID,                  ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_CERTIFICATE_TYPE,           ATTR_GRPC_INTEGER},   // CK_CERTIFICATE_TYPE,
-        {CKA_ISSUER,                     ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_SERIAL_NUMBER,              ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_AC_ISSUER,                  ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_OWNER,                      ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_ATTR_TYPES,                 ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_TRUSTED,                    ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_CERTIFICATE_CATEGORY,       ATTR_GRPC_INTEGER},   // CK_CERTIFICATE_CATEGORY,
-        {CKA_JAVA_MIDP_SECURITY_DOMAIN,  ATTR_GRPC_INTEGER},   // CK_JAVA_MIDP_SECURITY_DOMAIN,
-        {CKA_URL,                        ATTR_GRPC_BYTEARRAY}, // CK_RFC2279_STRING,
-        {CKA_HASH_OF_SUBJECT_PUBLIC_KEY, ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_HASH_OF_ISSUER_PUBLIC_KEY,  ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_NAME_HASH_ALGORITHM,        ATTR_GRPC_INTEGER},   // CK_MECHANISM_TYPE,
-        {CKA_CHECK_VALUE,                ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_KEY_TYPE,                   ATTR_GRPC_INTEGER},   // CK_KEY_TYPE,
-        {CKA_SUBJECT,                    ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_ID,                         ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_SENSITIVE,                  ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_ENCRYPT,                    ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_DECRYPT,                    ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_WRAP,                       ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_UNWRAP,                     ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_SIGN,                       ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_SIGN_RECOVER,               ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_VERIFY,                     ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_VERIFY_RECOVER,             ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_DERIVE,                     ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_START_DATE,                 ATTR_GRPC_BYTEARRAY}, // CK_DATE,
-        {CKA_END_DATE,                   ATTR_GRPC_BYTEARRAY}, // CK_DATE,
-        {CKA_MODULUS,                    ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_MODULUS_BITS,               ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_PUBLIC_EXPONENT,            ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_PRIVATE_EXPONENT,           ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_PRIME_1,                    ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_PRIME_2,                    ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_EXPONENT_1,                 ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_EXPONENT_2,                 ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_COEFFICIENT,                ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_PUBLIC_KEY_INFO,            ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY,
-        {CKA_PRIME,                      ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER,
-        {CKA_SUBPRIME,                   ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER, //type not found from spec
-        {CKA_BASE,                       ATTR_GRPC_BYTEARRAY}, // CK_BIGINTEGER, //type not found from spec
-        {CKA_PRIME_BITS,                 ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_SUBPRIME_BITS,              ATTR_GRPC_INTEGER},   // CK_ULONG, //type not found from spec
-        {CKA_VALUE_BITS,                 ATTR_GRPC_INTEGER},   // CK_ULONG, //type not found from spec
-        {CKA_VALUE_LEN,                  ATTR_GRPC_INTEGER},   // CK_ULONG, //type not found from spec
-        {CKA_EXTRACTABLE,                ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_LOCAL,                      ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_NEVER_EXTRACTABLE,          ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_ALWAYS_SENSITIVE,           ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_KEY_GEN_MECHANISM,          ATTR_GRPC_INTEGER},   // CK_MECHANISM_TYPE, //type not found from spec
-        {CKA_MODIFIABLE,                 ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_COPYABLE,                   ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_DESTROYABLE,                ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_EC_PARAMS,                  ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_EC_POINT,                   ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_SECONDARY_AUTH,             ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_AUTH_PIN_FLAGS,             ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_ALWAYS_AUTHENTICATE,        ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_WRAP_WITH_TRUSTED,          ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_HW_FEATURE_TYPE,            ATTR_GRPC_INTEGER},   // CK_HW_FEATURE_TYPE,
-        {CKA_RESET_ON_INIT,              ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_HAS_RESET,                  ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_PIXEL_X,                    ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_PIXEL_Y,                    ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_RESOLUTION,                 ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_CHAR_ROWS,                  ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_CHAR_COLUMNS,               ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_COLOR,                      ATTR_GRPC_BOOL},      // CK_BBOOL,
-        {CKA_BITS_PER_PIXEL,             ATTR_GRPC_INTEGER},   // CK_ULONG,
-        {CKA_CHAR_SETS,                  ATTR_GRPC_BYTEARRAY}, // CK_RFC2279_STRING,
-        {CKA_ENCODING_METHODS,           ATTR_GRPC_BYTEARRAY}, // CK_RFC2279_STRING,
-        {CKA_MIME_TYPES,                 ATTR_GRPC_BYTEARRAY}, // CK_RFC2279_STRING,
-        {CKA_MECHANISM_TYPE,             ATTR_GRPC_INTEGER},   // CK_MECHANISM_TYPE,
-        {CKA_REQUIRED_CMS_ATTRIBUTES,    ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_DEFAULT_CMS_ATTRIBUTES,     ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_SUPPORTED_CMS_ATTRIBUTES,   ATTR_GRPC_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
-        {CKA_WRAP_TEMPLATE,              ATTR_GRPC_BYTEARRAY}, // CK_ATTRPTR
-        {CKA_UNWRAP_TEMPLATE,            ATTR_GRPC_BYTEARRAY}, // CK_ATTRPTR
-        {CKA_ALLOWED_MECHANISMS,         ATTR_GRPC_BYTEARRAY}, // CK_MECHANISM_TYPE_PTR,
+        {CKA_CLASS,                      ATTR_INTEGER},   // CK_OBJECT_CLASS,
+        {CKA_TOKEN,                      ATTR_BOOL},      // CK_BBOOL,
+        {CKA_PRIVATE,                    ATTR_BOOL},      // CK_BBOOL,
+        {CKA_LABEL,                      ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_APPLICATION,                ATTR_BYTEARRAY}, // CK_RFC2279_STRING,
+        {CKA_VALUE,                      ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_OBJECT_ID,                  ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_CERTIFICATE_TYPE,           ATTR_INTEGER},   // CK_CERTIFICATE_TYPE,
+        {CKA_ISSUER,                     ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_SERIAL_NUMBER,              ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_AC_ISSUER,                  ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_OWNER,                      ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_ATTR_TYPES,                 ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_TRUSTED,                    ATTR_BOOL},      // CK_BBOOL,
+        {CKA_CERTIFICATE_CATEGORY,       ATTR_INTEGER},   // CK_CERTIFICATE_CATEGORY,
+        {CKA_JAVA_MIDP_SECURITY_DOMAIN,  ATTR_INTEGER},   // CK_JAVA_MIDP_SECURITY_DOMAIN,
+        {CKA_URL,                        ATTR_BYTEARRAY}, // CK_RFC2279_STRING,
+        {CKA_HASH_OF_SUBJECT_PUBLIC_KEY, ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_HASH_OF_ISSUER_PUBLIC_KEY,  ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_NAME_HASH_ALGORITHM,        ATTR_INTEGER},   // CK_MECHANISM_TYPE,
+        {CKA_CHECK_VALUE,                ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_KEY_TYPE,                   ATTR_INTEGER},   // CK_KEY_TYPE,
+        {CKA_SUBJECT,                    ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_ID,                         ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_SENSITIVE,                  ATTR_BOOL},      // CK_BBOOL,
+        {CKA_ENCRYPT,                    ATTR_BOOL},      // CK_BBOOL,
+        {CKA_DECRYPT,                    ATTR_BOOL},      // CK_BBOOL,
+        {CKA_WRAP,                       ATTR_BOOL},      // CK_BBOOL,
+        {CKA_UNWRAP,                     ATTR_BOOL},      // CK_BBOOL,
+        {CKA_SIGN,                       ATTR_BOOL},      // CK_BBOOL,
+        {CKA_SIGN_RECOVER,               ATTR_BOOL},      // CK_BBOOL,
+        {CKA_VERIFY,                     ATTR_BOOL},      // CK_BBOOL,
+        {CKA_VERIFY_RECOVER,             ATTR_BOOL},      // CK_BBOOL,
+        {CKA_DERIVE,                     ATTR_BOOL},      // CK_BBOOL,
+        {CKA_START_DATE,                 ATTR_BYTEARRAY}, // CK_DATE,
+        {CKA_END_DATE,                   ATTR_BYTEARRAY}, // CK_DATE,
+        {CKA_MODULUS,                    ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_MODULUS_BITS,               ATTR_INTEGER},   // CK_ULONG,
+        {CKA_PUBLIC_EXPONENT,            ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_PRIVATE_EXPONENT,           ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_PRIME_1,                    ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_PRIME_2,                    ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_EXPONENT_1,                 ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_EXPONENT_2,                 ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_COEFFICIENT,                ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_PUBLIC_KEY_INFO,            ATTR_BYTEARRAY}, // CK_BYTEARRAY,
+        {CKA_PRIME,                      ATTR_BYTEARRAY}, // CK_BIGINTEGER,
+        {CKA_SUBPRIME,                   ATTR_BYTEARRAY}, // CK_BIGINTEGER, //type not found from spec
+        {CKA_BASE,                       ATTR_BYTEARRAY}, // CK_BIGINTEGER, //type not found from spec
+        {CKA_PRIME_BITS,                 ATTR_INTEGER},   // CK_ULONG,
+        {CKA_SUBPRIME_BITS,              ATTR_INTEGER},   // CK_ULONG, //type not found from spec
+        {CKA_VALUE_BITS,                 ATTR_INTEGER},   // CK_ULONG, //type not found from spec
+        {CKA_VALUE_LEN,                  ATTR_INTEGER},   // CK_ULONG, //type not found from spec
+        {CKA_EXTRACTABLE,                ATTR_BOOL},      // CK_BBOOL,
+        {CKA_LOCAL,                      ATTR_BOOL},      // CK_BBOOL,
+        {CKA_NEVER_EXTRACTABLE,          ATTR_BOOL},      // CK_BBOOL,
+        {CKA_ALWAYS_SENSITIVE,           ATTR_BOOL},      // CK_BBOOL,
+        {CKA_KEY_GEN_MECHANISM,          ATTR_INTEGER},   // CK_MECHANISM_TYPE, //type not found from spec
+        {CKA_MODIFIABLE,                 ATTR_BOOL},      // CK_BBOOL,
+        {CKA_COPYABLE,                   ATTR_BOOL},      // CK_BBOOL,
+        {CKA_DESTROYABLE,                ATTR_BOOL},      // CK_BBOOL,
+        {CKA_EC_PARAMS,                  ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_EC_POINT,                   ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_SECONDARY_AUTH,             ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_AUTH_PIN_FLAGS,             ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_ALWAYS_AUTHENTICATE,        ATTR_BOOL},      // CK_BBOOL,
+        {CKA_WRAP_WITH_TRUSTED,          ATTR_BOOL},      // CK_BBOOL,
+        {CKA_HW_FEATURE_TYPE,            ATTR_INTEGER},   // CK_HW_FEATURE_TYPE,
+        {CKA_RESET_ON_INIT,              ATTR_BOOL},      // CK_BBOOL,
+        {CKA_HAS_RESET,                  ATTR_BOOL},      // CK_BBOOL,
+        {CKA_PIXEL_X,                    ATTR_INTEGER},   // CK_ULONG,
+        {CKA_PIXEL_Y,                    ATTR_INTEGER},   // CK_ULONG,
+        {CKA_RESOLUTION,                 ATTR_INTEGER},   // CK_ULONG,
+        {CKA_CHAR_ROWS,                  ATTR_INTEGER},   // CK_ULONG,
+        {CKA_CHAR_COLUMNS,               ATTR_INTEGER},   // CK_ULONG,
+        {CKA_COLOR,                      ATTR_BOOL},      // CK_BBOOL,
+        {CKA_BITS_PER_PIXEL,             ATTR_INTEGER},   // CK_ULONG,
+        {CKA_CHAR_SETS,                  ATTR_BYTEARRAY}, // CK_RFC2279_STRING,
+        {CKA_ENCODING_METHODS,           ATTR_BYTEARRAY}, // CK_RFC2279_STRING,
+        {CKA_MIME_TYPES,                 ATTR_BYTEARRAY}, // CK_RFC2279_STRING,
+        {CKA_MECHANISM_TYPE,             ATTR_INTEGER},   // CK_MECHANISM_TYPE,
+        {CKA_REQUIRED_CMS_ATTRIBUTES,    ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_DEFAULT_CMS_ATTRIBUTES,     ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_SUPPORTED_CMS_ATTRIBUTES,   ATTR_BYTEARRAY}, // CK_BYTEARRAY, //type not found from spec
+        {CKA_WRAP_TEMPLATE,              ATTR_BYTEARRAY}, // CK_ATTRPTR
+        {CKA_UNWRAP_TEMPLATE,            ATTR_BYTEARRAY}, // CK_ATTRPTR
+        {CKA_ALLOWED_MECHANISMS,         ATTR_BYTEARRAY}, // CK_MECHANISM_TYPE_PTR,
 };
 
 typedef struct {
@@ -296,6 +296,8 @@ CK_ATTRIBUTE_TYPE privateKeyAttrType[] = {
         CKA_UNWRAP,
         CKA_EXTRACTABLE,
         CKA_WRAP_WITH_TRUSTED,
+        CKA_MODULUS,
+        CKA_EC_POINT,
 };
 
 const char * getKeyTypeStr(CK_KEY_TYPE keyType) {
@@ -334,7 +336,7 @@ AttrGRPCType getAttrType(CK_ATTRIBUTE_TYPE typeId) {
             return attrToType[i].grpcType;
         }
     }
-    return ATTR_GRPC_INVALID;
+    return ATTR_INVALID;
 }
 
 const char * getAttrString(CK_ATTRIBUTE_TYPE typeId) {
@@ -346,31 +348,13 @@ const char * getAttrString(CK_ATTRIBUTE_TYPE typeId) {
     return NULL;
 }
 
-int IS_BIG_ENDIAN = 0;
-// bigEndian returns 1 for big endian machine, 0 for little endian.
-int bigEndian() {
-    short i = 0x0A0B;
-    unsigned char *p = (unsigned char *)&i;
-
-    if (*p == 0x0A) {
-        return 1;
-    }
-    return 0;
-}
-
 // getDecimalFromBytes returns long number for hex. Returning value is undefined if it exceeds 64 bits.
 unsigned long getDecimalFromBytes(const unsigned char *src, int len) {
     unsigned long ret = 0;
-    if (IS_BIG_ENDIAN) {
-        for (int i = 0; i < len; i++) {
-            ret <<= 8;
-            ret += (int)src[i];
-        }
-    } else {
-        for (int i = len - 1; i >= 0; i--) {
-            ret <<= 8;
-            ret += (int)src[i];
-        }
+
+    for (int i = 0; i < len; i++) {
+        ret <<= 8;
+        ret += (int)src[i];
     }
     return ret;
 }
@@ -487,13 +471,13 @@ CK_ATTRIBUTE_PTR allocTemplate(CK_OBJECT_CLASS objClass, CK_ULONG* amt) {
         size_t memSize = 0;
         pAttrs[i].type = allAttrIdList[i];
         switch (t) {
-        case ATTR_GRPC_BOOL:
+        case ATTR_BOOL:
             memSize = 1;
             break;
-        case ATTR_GRPC_INTEGER:
+        case ATTR_INTEGER:
             memSize = 8;
             break;
-        case ATTR_GRPC_BYTEARRAY:
+        case ATTR_BYTEARRAY:
             memSize = 1024; // enough for any byte attribute
             break;
         default:
@@ -523,7 +507,7 @@ void PrintAttrs(CK_ATTRIBUTE* pAttrs, int amount) {
     unsigned long ulongVale;
     for (int i = 0; i < amount; i++) {
         t = getAttrType(pAttr[i].type);
-        if (t == ATTR_GRPC_INVALID) {
+        if (t == ATTR_INVALID) {
             printf("Unrecognized attribute type %lx\n", pAttr[i].type);
             continue;
         }
@@ -536,17 +520,17 @@ void PrintAttrs(CK_ATTRIBUTE* pAttrs, int amount) {
             //printf("%-*s: %s\n", printWidth, str, "Unavailable");
             continue;
         }
-        if (t == ATTR_GRPC_BYTEARRAY && pAttr[i].ulValueLen == 0) {
+        if (t == ATTR_BYTEARRAY && pAttr[i].ulValueLen == 0) {
             printf("%-*s: %s\n", printWidth, str, "Empty");
             continue;
         }
 
         switch (t) {
-        case ATTR_GRPC_BOOL:
+        case ATTR_BOOL:
             pCh = (unsigned char *)pAttr[i].pValue;
             printf("%-*s: %s\n", printWidth, str, pCh[0] == 0? "FALSE":"TRUE");
             break;
-        case ATTR_GRPC_INTEGER:
+        case ATTR_INTEGER:
             if (pAttr[i].ulValueLen != sizeof(ulongVale)) {
                 printf("Integer attribute is not 8 bytes: %ld\n", pAttr[i].ulValueLen);
                 continue;
@@ -564,7 +548,7 @@ void PrintAttrs(CK_ATTRIBUTE* pAttrs, int amount) {
             }
 
             break;
-        case ATTR_GRPC_BYTEARRAY:
+        case ATTR_BYTEARRAY:
             PrintByteBuf(pAttr[i].type, str, (const unsigned char *)pAttr[i].pValue, pAttr[i].ulValueLen);
             break;
         default:
@@ -598,6 +582,7 @@ CK_UTF8CHAR         userPin[256] = {0};
 char                pkcs11LibName[1024] = {0};
 char                inputKeyLabel[1024] = {0}; // There are default labels for 3 different types of keys
 int                 mode = 1; // 1: generate keys (default), 2: load keys with the same label
+char                strUsage[] = "./pkcs11-attrs -p <path to pkcs11 library> -s <SO user API key> -u <normal user API key> -l <label> -m [generate|load]";
 
 void getArgs(int argc, char **argv) {
     int c, n;
@@ -632,7 +617,7 @@ void getArgs(int argc, char **argv) {
         case 's':
             n = snprintf((char *)soPin, sizeof(soPin), "%s", optarg);
             if (n < strlen(optarg)) {
-                printf("SO pin is too long\n");
+                printf("SO PIN is too long\n");
                 exit(1);
             }
           break;
@@ -640,7 +625,7 @@ void getArgs(int argc, char **argv) {
         case 'u':
             n = snprintf((char *)userPin, sizeof(userPin), "%s", optarg);
             if (n < strlen(optarg)) {
-                printf("Normal user pin is too long\n");
+                printf("Normal user PIN is too long\n");
                 exit(1);
             }
           break;
@@ -664,13 +649,17 @@ void getArgs(int argc, char **argv) {
             }
             break;
         default:
-          printf("Usage: ./pkcs11-attrs -p <path to pkcs11 library> -s <SO user API key> -u <normal user API key> -m [generate|load] -l <key label>\n");
+          printf("%s\n", strUsage);
           exit(1);
         }
     }
 
-    if (strlen((char *)soPin) == 0 || strlen((char *)userPin) == 0 || strlen(pkcs11LibName) == 0) {
-        printf("Usage: ./pkcs11-attrs -p <path to pkcs11 library> -s <SO user API key> -u <normal user API key>\n");
+    if (strlen((char *)soPin) == 0 && mode == 1) {
+        printf("PIN for the SO user must be provided when generating keys\n");
+        exit(1);
+    }
+    if (strlen((char *)userPin) == 0 || strlen(pkcs11LibName) == 0) {
+        printf("%s\n", strUsage);
         exit(1);
     }
 }
@@ -710,15 +699,11 @@ int main( int argc, char **argv )
    CK_MECHANISM            mech;
    CK_OBJECT_HANDLE        publicKey, privateKey, aesKey;
    static CK_BBOOL         isTrue = TRUE;
+   static CK_BBOOL         isFalse = FALSE;
 
    CK_RV                   (*pFunc)();
    void                    *pkcs11Lib;
  
-   if (bigEndian()) {
-       IS_BIG_ENDIAN = 1;
-   } else {
-       IS_BIG_ENDIAN = 0;
-   }
    getArgs(argc, argv);
 
    printf("Opening the PKCS11 library...\n");
@@ -875,6 +860,7 @@ int main( int argc, char **argv )
     {CKA_VALUE_LEN,    &aesKeyLen,  sizeof(aesKeyLen) },
     {CKA_ENCRYPT,      &isTrue,     sizeof(isTrue) },
     {CKA_DECRYPT,      &isTrue,     sizeof(isTrue) },
+    {CKA_EXTRACTABLE,  &isFalse,    sizeof(isFalse)},
    };
    mech.mechanism      = CKM_AES_KEY_GEN;
    mech.ulParameterLen = 0;
@@ -907,7 +893,8 @@ int main( int argc, char **argv )
    {
       {CKA_LABEL,    ecPrivLabel,    strlen(ecPrivLabel) },
       {CKA_TOKEN,    &isTrue, sizeof(isTrue) },
-      {CKA_SIGN,     &isTrue, sizeof(isTrue) }
+      {CKA_SIGN,     &isTrue, sizeof(isTrue) },
+      {CKA_EXTRACTABLE,  &isFalse,    sizeof(isFalse)},
    };
    mech.mechanism      = CKM_EC_KEY_PAIR_GEN;
    mech.ulParameterLen = 0;
@@ -931,7 +918,7 @@ int main( int argc, char **argv )
 
    // Print RSA key attributes
    unsigned long rsaBits = 2048;
-   unsigned char pubExponent[] = {0x1, 0x0, 0x1};
+   unsigned char pubExponent[] = {0x2, 0x0, 0x1};
    CK_ATTRIBUTE rsa_pub_tmpl[] = {
       {CKA_LABEL,           rsaPubLabel,    strlen(rsaPubLabel) },
       {CKA_MODULUS_BITS,    &rsaBits, sizeof(rsaBits)},
@@ -945,7 +932,8 @@ int main( int argc, char **argv )
    {
       {CKA_LABEL,    rsaPrivLabel,    strlen(rsaPrivLabel) },
       {CKA_TOKEN,    &isTrue, sizeof(isTrue) },
-      {CKA_SIGN,     &isTrue, sizeof(isTrue) }
+      {CKA_SIGN,     &isTrue, sizeof(isTrue) },
+      {CKA_EXTRACTABLE,  &isFalse,    sizeof(isFalse)},
    };
    mech.mechanism      = CKM_RSA_PKCS_KEY_PAIR_GEN;
    mech.ulParameterLen = 0;
