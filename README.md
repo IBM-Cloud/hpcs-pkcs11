@@ -60,6 +60,8 @@ For maximum security, you can optionally verify the integrity and authenticity o
 
 Prior to using the PKCS #11 library, the keystores must be initialized. To initialize the keystores, the security officer (SO) user needs to perform a `C_InitToken` operation. Once the keystores have been initialized, normal and anonymous users can proceed with key operations such as `C_GenerateKey` or `C_GenerateKeyPair`.
 
+A keystore becomes an **authenticated keystore** if it is configured with a password. For more details please check [Performing cryptographic operations with the PKCS #11 API](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-set-up-pkcs-api#step3-setup-configuration-file).
+
 ## Getting started
 
 The `samples` directory in this repository contains source code that could be used to test your HPCS instance, the PKCS11 library, and the PKCS11 library's configuration file.  Follow the instructions inside pkcs11-crypto.c to get started.
@@ -74,3 +76,52 @@ The sample code performs the following operations:
 * Encrypt data and decrypt data using the AES key
 * Sign and verify data using the EC key pair
 * Logout, close session and finalize
+
+# Attributes 
+We support a subset of attributes of the PKCS#11 specification. The following table shows:
+1. Which attributes are allowed to be used for PKCS11 requests (key generation, unwrapping, and key derivation).
+2. Data type of each attribute and the key types that are applicable.
+3. What attributes are generated after key or key pairs are generated.
+
+| Attribute                                                                            | Category | Applies to key types              | Allowed in template | Value type  | Library default | Filled by HPCS | Read only<br>After generation |
+| ------------------------------------------------------------------------------------ | -------- | --------------------------------- | ------------------- | ----------- | --------------- | -------------- | ----------------------------- |
+| ﻿CKA\_CLASS                                                                          | 1        | All                               | y                   | Integer     | Depends <sup>[1](#cka-class)</sup>        |                | y                             |
+| ﻿CKA\_TOKEN                                                                          | 3        | All                               | y                   | Bool        | FALSE           |                | y                             |
+| ﻿CKA\_PRIVATE                                                                        | 3        | All                               | y                   | Bool        | Depends <sup>[2](#cka-private)</sup>        |                | y                             |
+| ﻿CKA\_MODIFIABLE                                                                     | 3        | All                               | y                   | Bool        | TRUE            | y              | Read only if FALSE            |
+| ﻿CKA\_LABEL                                                                          | 4        | All                               | y                   | Bytes       | empty           |                |                               |
+| CKA\_KEY\_TYPE                                                                       | 1        | All                               | y                   | Integer     |                 |                | y                             |
+| CKA\_ID                                                                              | 4        | All                               | y                   | Bytes       | empty           |                |                               |
+| CKA\_DERIVE                                                                          | 1        | All                               | y                   | Bool        | FALSE           |                |                               |
+| CKA\_LOCAL                                                                           | 1        | All but public key                |                     | Bool        |                 | y              | y                             |
+| CKA\_KEY\_GEN\_MECHANISM                                                             | 2        | All                               |                     | Integer     |                 | y              | y                             |
+| CKA\_GREP11\_WKID                                                                    | 2        | private key<br>secret key         |                     | Big integer |                 | y              | y                             |
+| CKA\_SUBJECT                                                                         | 4        | public key<br>private key         | y                   | Bytes       | empty           |                |                               |
+| CKA\_ENCRYPT<br>CKA\_DECRYPT<br>CKA\_SIGN<br>CKA\_VERIFY<br>CKA\_WRAP<br>CKA\_UNWRAP | 1        | All when allowed <br>by algorithm | y                   | Bool        |                 | y              |                               |
+| ﻿CKA\_SENSITIVE                                                                      | 2        | private key<br>secret key         | y                   | Bool        |                 |                | y                             |
+| CKA\_ALWAYS\_SENSITIVE                                                               | 2        | private key<br>secret key         |                     | Bool        |                 | y              | y                             |
+| CKA\_WRAP\_WITH\_TRUSTED                                                             | 1        | private key<br>secret key         | y                   | Bool        | FALSE           | y              |                               |
+| CKA\_EXTRACTABLE                                                                     | 1        | private key<br>secret key         | y                   | Bool        | FALSE           | y              | Read only if FALSE            |
+| ﻿CKA\_NEVER\_EXTRACTABLE                                                             | 1        | private key<br>secret key         |                     | Bool        |                 | y              | y                             |
+| CKA\_CHECK\_VALUE                                                                    | 2        | secret key                        |                     | Bytes       |                 | y              | y                             |
+| CKA\_TRUSTED                                                                         | 1        | public key<br>secret key          | y                   | Bool        |                 | y              |                               |
+| CKA\_PUBLIC\_KEY\_INFO                                                               | 2        | public key                        | y                   | Bool        |                 | y              | y                             |
+| ﻿CKA\_MODULUS\_BITS                                                                  | 1        | RSA public key                    | y                   | Integer     |                 |                | y                             |
+| ﻿CKA\_MODULUS                                                                        | 2        | RSA public key<br>RSA private key |                     | Big integer |                 | y              | y                             |
+| ﻿CKA\_PUBLIC\_EXPONENT                                                               | 1        | RSA public key<br>RSA private key | y                   | Big integer |                 |                | y                             |
+| ﻿CKA\_EC\_PARAMS                                                                     | 1        | EC public key<br>EC private key   | y                   | Bytes       |                 |                | y                             |
+| ﻿CKA\_EC\_POINT                                                                      | 2        | EC public key                     |                     | Bytes       |                 | y              | y                             |
+| CKA\_VALUE\_LEN                                                                      | 1        | Generate secret key<br>AES key    | y                   | integer     |                 |                | y                             |
+
+<a name="cka-class">1</a>. Default value of `CKA_CLASS` is based on mechanisms and key types:
+
+| Function         | Mechanism                                                                                                              | Default value                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| GenerateKey      | CKM\_AES\_KEY\_GEN<br>CKM\_DES2\_KEY\_GEN<br>CKM\_DES3\_KEY\_GEN<br>CKM\_GENERIC\_SECRET\_KEY\_GEN                     | CKO\_SECRET\_KEY                                                                               |
+| GenerateKeyPairs | CKM\_EC\_KEY\_PAIR\_GEN<br>CKM\_RSA\_PKCS\_KEY\_PAIR\_GEN<br>CKM\_RSA\_X9\_31\_KEY\_PAIR\_GEN                          | CKO\_PUBLIC\_KEY & CKO\_PRIVATE\_KEY                                                           |
+| UnwrapKey        | CKM\_AES\_CBC<br>CKM\_AES\_CBC\_PAD<br>CKM\_DES3\_CBC<br>CKM\_DES3\_CBC\_PAD<br>CKM\_RSA\_PKCS<br>CKM\_RSA\_PKCS\_OAEP | CKO\_SECRET\_KEY if key type is AES, DES2 or DES3. Otherwise, the default is CKO\_PRIVATE\_KEY |
+| DeriveKey        |                                                                                                                        | CKO\_SECRET\_KEY                                                                               |
+
+
+<a name="cka-private">2</a>. Default value of `CKA_PRIVATE` is TRUE if the `Normal user` is logged in, otherwise, it is FALSE
+ 
