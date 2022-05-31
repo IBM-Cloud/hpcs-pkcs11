@@ -77,6 +77,8 @@ The sample code performs the following operations:
 * Sign and verify data using the EC key pair
 * Logout, close session and finalize
 
+pkcs11-dilithium.c demonstrates how to generate a Dilithium key pair, followed by signing and verifying data using the Dilithium key pair.
+
 # Attributes 
 We support a subset of attributes of the PKCS#11 specification. The following table shows:
 1. Which attributes are allowed to be used for PKCS11 requests (key generation, unwrapping, and key derivation).
@@ -112,13 +114,14 @@ We support a subset of attributes of the PKCS#11 specification. The following ta
 | ﻿CKA\_EC\_PARAMS                                                                     | 1        | EC public key<br>EC private key   | y                   | Bytes       |                 |                | y                             |
 | ﻿CKA\_EC\_POINT                                                                      | 2        | EC public key                     |                     | Bytes       |                 | y              | y                             |
 | CKA\_VALUE\_LEN                                                                      | 1        | Generate secret key<br>AES key    | y                   | integer     |                 |                | y                             |
+| ﻿CKA\_IBM\_PQC\_PARAMS                                                               | 1        | Dilithium public key              | y                   | Bytes       |                 |                | y                             |
 
 <a name="cka-class">1</a>. Default value of `CKA_CLASS` is based on mechanisms and key types:
 
 | Function         | Mechanism                                                                                                              | Default value                                                                                  |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | GenerateKey      | CKM\_AES\_KEY\_GEN<br>CKM\_DES2\_KEY\_GEN<br>CKM\_DES3\_KEY\_GEN<br>CKM\_GENERIC\_SECRET\_KEY\_GEN                     | CKO\_SECRET\_KEY                                                                               |
-| GenerateKeyPairs | CKM\_EC\_KEY\_PAIR\_GEN<br>CKM\_RSA\_PKCS\_KEY\_PAIR\_GEN<br>CKM\_RSA\_X9\_31\_KEY\_PAIR\_GEN                          | CKO\_PUBLIC\_KEY & CKO\_PRIVATE\_KEY                                                           |
+| GenerateKeyPairs | CKM\_EC\_KEY\_PAIR\_GEN<br>CKM\_RSA\_PKCS\_KEY\_PAIR\_GEN<br>CKM\_RSA\_X9\_31\_KEY\_PAIR\_GEN<br>CKM\_IBM\_DILITHIUM                          | CKO\_PUBLIC\_KEY & CKO\_PRIVATE\_KEY                                                           |
 | UnwrapKey        | CKM\_AES\_CBC<br>CKM\_AES\_CBC\_PAD<br>CKM\_DES3\_CBC<br>CKM\_DES3\_CBC\_PAD<br>CKM\_RSA\_PKCS<br>CKM\_RSA\_PKCS\_OAEP | CKO\_SECRET\_KEY if key type is AES, DES2 or DES3. Otherwise, the default is CKO\_PRIVATE\_KEY |
 | DeriveKey        |                                                                                                                        | CKO\_SECRET\_KEY                                                                               |
 
