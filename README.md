@@ -2,7 +2,7 @@
 
 IBM Cloud® Hyper Protect Crypto Services is a dedicated key management service and hardware security module (HSM). This service allows you to take ownership of a cloud HSM to fully manage your encryption keys and to perform cryptographic operations. Hyper Protect Crypto Services is also the only service in the cloud industry that is built on FIPS 140-2 Level 4-certified hardware.
 
-# Installing the PCKS #11 files
+# Installing the PKCS #11 files
 
 The files contained in this repository allow clients to access a cloud HSM via the HPCS service using a PKCS #11 library and its associated configuration file. The files are categorized by *releases*, which can be accessed from the hpcs-pkcs11 repository's [releases URL](https://github.com/IBM-Cloud/hpcs-pkcs11/releases).
 
