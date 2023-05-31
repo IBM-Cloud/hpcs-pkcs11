@@ -39,8 +39,6 @@ CK_FUNCTION_LIST  *funcs;
 CK_BYTE           tokenNameBuf[32];
 const char        tokenName[] = "testToken";
 
-#define  CKM_IBM_DILITHIUM                  (CKM_VENDOR_DEFINED +0x10023)
-
 int main( int argc, char **argv )
 {
    CK_C_INITIALIZE_ARGS  initArgs;
