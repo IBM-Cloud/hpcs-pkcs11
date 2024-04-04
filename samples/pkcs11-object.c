@@ -45,9 +45,10 @@ int main( int argc, char **argv )
     CK_RV                   rc;
     CK_FLAGS                flags = 0;
     CK_SESSION_HANDLE       session;
-    CK_OBJECT_HANDLE        pubObject;
+    CK_OBJECT_HANDLE        pubObject, privObject;
     static CK_BBOOL         isTrue = TRUE;
     static CK_BBOOL         isFalse = FALSE;
+    CK_MECHANISM            mech;
 
     CK_RV                   (*pFunc)();
     void                    *pkcs11Lib;
@@ -117,7 +118,8 @@ int main( int argc, char **argv )
     CK_OBJECT_CLASS objClass = CKO_PUBLIC_KEY;
     CK_KEY_TYPE keyType = CKK_ECDSA;
     CK_BYTE curve_oid[] = {0x06, 0x03, 0x2b, 0x65, 0x70};
-    CK_BYTE ec_point[] = {0x05, 0x53, 0xbc, 0xb2, 0xd0, 0x27, 0x28, 0x56, 0x53, 0x12, 0x2c, 0xe2, 0x96, 0x1e, 0xc7, 0xaa, 0x62, 0x9e, 0xd2, 0x38, 0x0c, 0x34, 0xbb, 0x00, 0xfe, 0x37, 0xbf, 0xd1, 0x21, 0x93, 0x7c, 0xbd}; 
+    CK_BYTE ec_point[] = {0x38, 0xf9, 0x52, 0x1b, 0xdd, 0x5d, 0xaa, 0x8e, 0x78, 0xcd, 0x12, 0x5b, 0x57, 0x53, 0x1b, 0x07,
+                          0xd5, 0xe7, 0x85, 0x91, 0x62, 0x34, 0x90, 0x83, 0x0d, 0x2a, 0x5e, 0x32, 0x57, 0x53, 0xf8, 0xed}; 
     CK_ATTRIBUTE pub_tmpl[] = {
         {CKA_TOKEN,        &isTrue,     sizeof(isTrue) },
         {CKA_CLASS,        &objClass,   sizeof(objClass) },
@@ -133,6 +135,68 @@ int main( int argc, char **argv )
         printf("error C_CreateObject: rc=0x%04lx\n", rc );
         funcs->C_Finalize( NULL );
         return !CKR_OK;
+    }
+
+    printf("Generating ED25519 private object... \n");
+    objClass = CKO_PRIVATE_KEY;
+    CK_BYTE value[] = {0xf1, 0x4a, 0x91, 0x00, 0x5f, 0xd6, 0xdb, 0xf7, 0x6f, 0x67, 0x1d, 0x70, 0xbd, 0xc7, 0xb0, 0x91,
+                          0x5b, 0x89, 0xba, 0xb9, 0x6a, 0x60, 0x7c, 0xd8, 0x55, 0xad, 0x32, 0x56, 0xb1, 0x9b, 0x02, 0x74,
+                          0x38, 0xf9, 0x52, 0x1b, 0xdd, 0x5d, 0xaa, 0x8e, 0x78, 0xcd, 0x12, 0x5b, 0x57, 0x53, 0x1b, 0x07,
+                          0xd5, 0xe7, 0x85, 0x91, 0x62, 0x34, 0x90, 0x83, 0x0d, 0x2a, 0x5e, 0x32, 0x57, 0x53, 0xf8, 0xed}; 
+    CK_ATTRIBUTE priv_tmpl[] = {
+        {CKA_TOKEN,        &isTrue,     sizeof(isTrue) },
+        {CKA_CLASS,        &objClass,   sizeof(objClass) },
+        {CKA_KEY_TYPE,     &keyType,    sizeof(keyType) },
+        {CKA_PRIVATE,      &isTrue,     sizeof(isTrue) },
+        {CKA_SIGN,         &isTrue,     sizeof(isTrue) },
+        {CKA_EC_PARAMS,    &curve_oid,  sizeof(curve_oid) },
+        {CKA_VALUE,        &value,      sizeof(value) },
+    };
+
+    rc = funcs->C_CreateObject(session, priv_tmpl, sizeof(priv_tmpl)/sizeof(CK_ATTRIBUTE), &privObject);
+    if (rc != CKR_OK) {
+        printf("error C_CreateObject: rc=0x%04lx\n", rc );
+        funcs->C_Finalize( NULL );
+        return !CKR_OK;
+    }
+
+    printf("Signing with ED25519 private object... \n");
+    CK_BYTE dataToBeSigned[] = "This is data to be signed";
+    CK_ULONG dataToBeSignedLen = sizeof(dataToBeSigned) - 1;
+    CK_BYTE signature[64]; // minimum 64 bytes in P-256 case
+    CK_ULONG signatureLen = sizeof(signature);
+
+    mech.mechanism      = CKM_IBM_ED25519_SHA512;
+    mech.ulParameterLen = 0;
+    mech.pParameter     = NULL;
+
+    rc = funcs->C_SignInit(session, &mech, privObject);
+    if (rc != CKR_OK) {
+       printf("error C_SignInit: rc=0x%04lx\n", rc );
+       funcs->C_Finalize( NULL );
+       return !CKR_OK;
+    }
+
+    rc = funcs->C_Sign(session, dataToBeSigned, dataToBeSignedLen, signature, &signatureLen);
+    if (rc != CKR_OK) {
+       printf("error C_Sign: rc=0x%04lx\n", rc );
+       funcs->C_Finalize( NULL );
+       return !CKR_OK;
+    }
+
+    printf("Verifying with ED25519 public object... \n");
+    rc = funcs->C_VerifyInit(session, &mech, pubObject);
+    if (rc != CKR_OK) {
+       printf("error C_VerifyInit: rc=0x%04lx\n", rc );
+       funcs->C_Finalize( NULL );
+       return !CKR_OK;
+    }
+
+    rc = funcs->C_Verify(session, dataToBeSigned, dataToBeSignedLen, signature, signatureLen);
+    if (rc != CKR_OK) {
+       printf("error C_Verify: rc=0x%04lx\n", rc );
+       funcs->C_Finalize( NULL );
+       return !CKR_OK;
     }
 
     printf("Logging out... \n");
