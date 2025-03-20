@@ -6,7 +6,7 @@ IBM Cloud® Hyper Protect Crypto Services is a dedicated key management service 
 
 The files contained in this repository allow clients to access a cloud HSM via the HPCS service using a PKCS #11 library and its associated configuration file. The files are categorized by *releases*, which can be accessed from the hpcs-pkcs11 repository's [releases URL](https://github.com/IBM-Cloud/hpcs-pkcs11/releases).
 
-**NOTE:** The PKCS #11 library, for both the amd64 and s390x platforms, is currently supported only on Linux.
+**NOTE:** The PKCS #11 library, for both the amd64 and s390x platforms, is currently supported only on Linux (GLIBC distros only, so not compatible with Alpine for now).
 
 There are two files used along with your PKCS #11 application:
 1. The PKCS #11 library:  pkcs11-grep11-**platform**.so.**major.minor.build**
